@@ -1,11 +1,14 @@
 #![allow(non_snake_case)]
 
-use jack_compiler::lexer;
+mod utils;
+
+use jack_compiler::{lexer, token};
 use std::fs;
 use std::io;
+use utils::{keyword_to_literal, symbol_to_literal};
 
 fn test_program(program_name: &str) -> io::Result<()> {
-    use lexer::Token::*;
+    use token::Token::*;
 
     let entries = fs::read_dir(format!("tests/programs/{}", program_name))?;
 
@@ -17,30 +20,28 @@ fn test_program(program_name: &str) -> io::Result<()> {
         if let Some(ext) = path.extension()
             && ext == "jack"
         {
-            println!("testing {}", path.file_name().unwrap().display());
-
             let source = fs::read_to_string(&path)?;
-            let lex = lexer::lexer(&source);
+            let lex = lexer::Lexer::new(&source);
 
-            let tokens = lex.map(|t| match t.unwrap() {
-                Keyword(kw) => format!("<keyword> {} </keyword>", kw),
-                // Turn "<" and ">" into "&lt;" and "&gt;" separately to match the compare files
-                Symbol(symbol) => match symbol {
-                    "<" => format!("<symbol> &lt; </symbol>"),
-                    ">" => format!("<symbol> &gt; </symbol>"),
-                    "&" => format!("<symbol> &amp; </symbol>"),
-                    _ => format!("<symbol> {} </symbol>", symbol),
-                },
-                // Remove the leading and trailing double quotes to match the compare files
-                StringConstant(str) => format!(
-                    "<stringConstant> {} </stringConstant>",
-                    &str[1..str.len() - 1]
-                        .replace("<", "^lt;")
-                        .replace(">", "&gt;")
-                        .replace("&", "&amp;")
-                ),
-                IntegerConstant(int) => format!("<integerConstant> {} </integerConstant>", int),
-                Identifier(ident) => format!("<identifier> {} </identifier>", ident),
+            let tokens = lex.map(|spanned| {
+                let (_, token, _) = spanned.unwrap();
+                match token {
+                    Keyword(kw) => format!("<keyword> {} </keyword>", keyword_to_literal(&kw)),
+                    // Turn "<" and ">" into "&lt;" and "&gt;" separately to match the compare files
+                    Symbol(sym) => format!("<symbol> {} </symbol>", symbol_to_literal(&sym)),
+                    // Remove the leading and trailing double quotes to match the compare files
+                    StringConstant(str) => format!(
+                        "<stringConstant> {} </stringConstant>",
+                        &str[1..str.len() - 1]
+                            .replace("<", "^lt;")
+                            .replace(">", "&gt;")
+                            .replace("&", "&amp;")
+                    ),
+                    IntegerConstant(int) => {
+                        format!("<integerConstant> {} </integerConstant>", int)
+                    }
+                    Identifier(ident) => format!("<identifier> {} </identifier>", ident),
+                }
             });
 
             let class_name = path.file_stem().unwrap().to_str().unwrap();

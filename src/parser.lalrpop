@@ -1,0 +1,280 @@
+use crate::token::{Token, LexicalError, Keyword, Symbol};
+use crate::ast;
+
+grammar;
+
+extern {
+	type Location = usize;
+	type Error = LexicalError;
+
+	enum Token {
+		"class" => Token::Keyword(Keyword::Class),
+		"static" => Token::Keyword(Keyword::Static),
+		"field" => Token::Keyword(Keyword::Field),
+		"int" => Token::Keyword(Keyword::Int),
+		"char" => Token::Keyword(Keyword::Char),
+		"boolean" => Token::Keyword(Keyword::Boolean),
+		"constructor" => Token::Keyword(Keyword::Constructor),
+		"function" => Token::Keyword(Keyword::Function),
+		"method" => Token::Keyword(Keyword::Method),
+		"void" => Token::Keyword(Keyword::Void),
+		"var" => Token::Keyword(Keyword::Var),
+		"let" => Token::Keyword(Keyword::Let),
+		"if" => Token::Keyword(Keyword::If),
+		"else" => Token::Keyword(Keyword::Else),
+		"while" => Token::Keyword(Keyword::While),
+		"do" => Token::Keyword(Keyword::Do),
+		"return" => Token::Keyword(Keyword::Return),
+		"true" => Token::Keyword(Keyword::True),
+		"false" => Token::Keyword(Keyword::False),
+		"null" => Token::Keyword(Keyword::Null),
+		"this" => Token::Keyword(Keyword::This),
+		"identifier" => Token::Identifier(<String>),
+		"{" => Token::Symbol(Symbol::OpenBrace),
+		"}" => Token::Symbol(Symbol::CloseBrace),
+		"(" => Token::Symbol(Symbol::OpenParen),
+		")" => Token::Symbol(Symbol::CloseParen),
+		"[" => Token::Symbol(Symbol::OpenBracket),
+		"]" => Token::Symbol(Symbol::CloseBracket),
+		"." => Token::Symbol(Symbol::Dot),
+		"," => Token::Symbol(Symbol::Comma),
+		";" => Token::Symbol(Symbol::Semi),
+		"+" => Token::Symbol(Symbol::Plus),
+		"-" => Token::Symbol(Symbol::Minus),
+		"*" => Token::Symbol(Symbol::Star),
+		"/" => Token::Symbol(Symbol::Slash),
+		"&" => Token::Symbol(Symbol::And),
+		"|" => Token::Symbol(Symbol::Or),
+		"<" => Token::Symbol(Symbol::Lt),
+		">" => Token::Symbol(Symbol::Gt),
+		"=" => Token::Symbol(Symbol::Eq),
+		"~" => Token::Symbol(Symbol::Tilde),
+		"IntegerConstant" => Token::IntegerConstant(<u16>),
+		"StringConstant" => Token::StringConstant(<String>),
+	}
+}
+
+pub Class: ast::Class = {
+	"class" <name:ClassName> "{" <variables:ClassVarDec*> <subroutines:SubroutineDec*> "}" => {
+		ast::Class {
+			name,
+			variables,
+			subroutines,
+		}
+	},
+}
+
+pub ClassVarDec: ast::ClassVarDec = {
+	<kind:VarKind> <ty:Ty> <mut names:(<VarName> ",")*> <name:VarName> ";" => {
+		names.push(name);
+		ast::ClassVarDec {
+			kind,
+			ty,
+			names,
+		}
+	},
+}
+
+pub VarKind: ast::VarKind = {
+    "static" => ast::VarKind::Static,
+	"field" => ast::VarKind::Field, 
+}
+
+pub Ty: ast::Ty = {
+	"int" => ast::Ty::Int,
+	"char" => ast::Ty::Char,
+	"boolean" => ast::Ty::Boolean,
+	ClassName => ast::Ty::Class(<>),
+}
+
+pub SubroutineDec: ast::SubroutineDec = {
+	<kind:SubroutineKind> <return_ty:SubroutineReturnTy> <name:SubroutineName> "(" <params:ParameterList> ")" <body:SubroutineBody> => {
+		ast::SubroutineDec {
+			kind,
+			return_ty,
+			name,
+			params,
+			body,
+		}
+	},
+}
+
+pub SubroutineKind: ast::SubroutineKind = {
+	"constructor" => ast::SubroutineKind::Constructor,
+	"function" => ast::SubroutineKind::Function,
+	"method" => ast::SubroutineKind::Method,
+}
+
+pub SubroutineReturnTy: ast::SubroutineReturnTy = {
+	"void" => ast::SubroutineReturnTy::Void,
+	Ty => ast::SubroutineReturnTy::Type(<>),
+}
+
+pub ParameterList: ast::ParameterList = {
+	<mut params:(<Parameter> ",")*> <param:Parameter?> => {
+	    if let Some(param) = param {
+			params.push(param);
+		}
+		ast::ParameterList(params)
+	},
+}
+
+pub Parameter: ast::Parameter = {
+	<ty:Ty> <name:VarName> => {
+		ast::Parameter {
+			ty,
+			name,
+		}
+	},
+}
+
+pub SubroutineBody: ast::SubroutineBody = {
+	"{" <variables:VarDec*> <stmts:Stmts> "}" => {
+		ast::SubroutineBody {
+			variables,
+			stmts,
+		}
+	},
+}
+
+pub VarDec: ast::VarDec = {
+	"var" <ty:Ty> <mut names:(<VarName> ",")*> <name:VarName> ";" => {
+		names.push(name);
+		ast::VarDec {
+			ty,
+			names,
+		}
+	},
+}
+
+pub Stmts: ast::Stmts = {
+	Stmt* => ast::Stmts(<>),
+}
+
+pub Stmt: ast::Stmt = {
+	LetStmt => ast::Stmt::Let(<>),
+	IfStmt => ast::Stmt::If(<>),
+	WhileStmt => ast::Stmt::While(<>),
+	DoStmt => ast::Stmt::Do(<>),
+	ReturnStmt => ast::Stmt::Return(<>),
+}
+
+pub LetStmt: ast::LetStmt = {
+	"let" <var_name:VarName> <idx_expr:("[" <Expression> "]")?> "=" <assign_expr:Expression> ";" => {
+		ast::LetStmt {
+			var_name,
+			idx_expr,
+			assign_expr,
+		}
+	},
+}
+
+pub IfStmt: ast::IfStmt = {
+	"if" "(" <condition:Expression> ")" "{" <stmts:Stmts> "}" <else_stmts:("else" "{" <Stmts> "}")?> => {
+		ast::IfStmt {
+			condition,
+			stmts,
+			else_stmts,
+		}
+	},
+}
+
+pub WhileStmt: ast::WhileStmt = {
+	"while" "(" <condition:Expression> ")" "{" <stmts:Stmts> "}" => {
+		ast::WhileStmt {
+			condition,
+			stmts,
+		}
+	},
+}
+
+pub DoStmt: ast::DoStmt = {
+	"do" <call:SubroutineCall> ";" => {
+		ast::DoStmt {
+			call,
+		}
+	},
+}
+
+pub ReturnStmt: ast::ReturnStmt = {
+	"return" <return_val:Expression?> ";" => {
+		ast::ReturnStmt {
+			return_val,
+		}
+	}
+}
+
+pub Expression: ast::Expression = {
+	<leading_term:Term> <following_terms:(<Op> <Term>)*> => {
+		ast::Expression {
+			leading_term: Box::new(leading_term),
+			following_terms: following_terms.into_iter().map(|(op, term)| (op, Box::new(term))).collect(),
+		}
+	},
+}
+
+pub Term: ast::Term = {
+	"IntegerConstant" => ast::Term::IntegerConst(<>),
+	"StringConstant" => ast::Term::StringConst(<>),
+	KeywordConst => ast::Term::KeywordConst(<>),
+	VarName => ast::Term::VarRef(<>),
+	<VarName> "[" <Expression> "]" => ast::Term::VarRefWithIdx(<>),
+	SubroutineCall => ast::Term::SubroutineCall(<>),
+	"(" <Expression> ")" => ast::Term::Expr(<>),
+	<op:UnaryOp> <term:Term> => ast::Term::UnaryOperation(op, Box::new(term)),
+}
+
+pub SubroutineCall: ast::SubroutineCall = {
+	<prefix:(<"identifier"> ".")?> <name:SubroutineName> "(" <args:ExpressionList> ")" => {
+		ast::SubroutineCall {
+			prefix,
+			name,
+		    args,
+		}
+	},
+}
+
+pub ExpressionList: ast::ExpressionList = {
+	<mut exprs:(<Expression> ",")*> <expr:Expression?> => {
+		if let Some(expr) = expr {
+			exprs.push(expr);
+		}
+		ast::ExpressionList(exprs)
+	},
+}
+
+pub Op: ast::Op = {
+	"+" => ast::Op::Add,
+	"-" => ast::Op::Sub,
+	"*" => ast::Op::Mul,
+	"/" => ast::Op::Div,
+	"&" => ast::Op::And,
+	"|" => ast::Op::Or,
+	"<" => ast::Op::Lt,
+	">" => ast::Op::Gt,
+	"=" => ast::Op::Eq,
+}
+
+pub UnaryOp: ast::UnaryOp = {
+	"-" => ast::UnaryOp::Negative,
+	"~" => ast::UnaryOp::Neg,
+}
+
+pub KeywordConst: ast::KeywordConst = {
+	"true" => ast::KeywordConst::True,
+	"false" => ast::KeywordConst::False,
+	"null" => ast::KeywordConst::Null,
+	"this" => ast::KeywordConst::This,
+}
+
+pub ClassName: ast::ClassName = {
+	<name: "identifier"> => name,
+}
+
+pub VarName: ast::VarName = {
+	<name: "identifier"> => name,
+}
+
+pub SubroutineName: ast::SubroutineName = {
+	<name: "identifier"> => name,
+}
