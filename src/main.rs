@@ -8,7 +8,7 @@ fn main() -> io::Result<()> {
     let args = env::args().collect::<Vec<_>>();
 
     if args.len() < 2 {
-        panic!("Please provide JACK source file.\n");
+        panic!("Please provide Jack source file(s).\n");
     }
 
     for arg in &args[1..] {
