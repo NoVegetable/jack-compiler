@@ -2,12 +2,12 @@
 
 mod utils;
 
+use jack_compiler::utils::{XmlWrite, init_writer};
 use jack_compiler::{lexer, parser};
 use std::{
     fs,
     io::{self, Write},
 };
-use utils::xml::{XmlWrite, init_writer};
 
 fn test_program(program_name: &str) -> io::Result<()> {
     let entries = fs::read_dir(format!("tests/programs/{}", program_name))?;

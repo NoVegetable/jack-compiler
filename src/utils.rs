@@ -1,4 +1,6 @@
-use jack_compiler::ast;
+//! Utilities for writing XML output
+
+use crate::ast;
 use std::io::Write;
 use xml::writer::{EmitterConfig, Error as XmlError, EventWriter, XmlEvent};
 

@@ -1,7 +1,5 @@
 #![allow(dead_code)]
 
-pub mod xml;
-
 use jack_compiler::token::{Keyword, Symbol};
 
 pub fn keyword_to_literal(kw: &Keyword) -> &'static str {
