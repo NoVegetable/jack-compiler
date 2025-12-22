@@ -1,6 +1,6 @@
 # Jack Compiler Frontend
 
-This is a Jack compiler frontend implementation, which takes Jack source code as input and outputs its AST. To build and run this project, please read the sections [Prerequisite](#prerequisite) and [Usage](#run-the-project).
+This is a Jack compiler frontend implementation, which takes Jack source code as input and outputs its AST. To build and run this project, please read the sections [Prerequisite](#prerequisite) and [Usage](#usage).
 
 ## Prerequisite
 
