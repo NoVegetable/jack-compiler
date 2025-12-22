@@ -9,6 +9,7 @@ use std::path::Path;
 
 fn main() -> io::Result<()> {
     let matches = Command::new("jack-compiler")
+        .about("Jack compiler frontend")
         .arg(Arg::new("output").short('o').long("output").help(
             "The output path for the generated AST. If not set, the output would be set to stdout.",
         ))
@@ -20,7 +21,7 @@ fn main() -> io::Result<()> {
                 .default_value("xml")
                 .long_help(
 "The output format. Possible values are: 'xml', 'debug'. They correspond to the 2 formats we
-supports: XML and Rust debug print. The default value is 'xml'"
+supports: XML and Rust debug print. The default value is 'xml'."
                 ),
         )
         .arg(
