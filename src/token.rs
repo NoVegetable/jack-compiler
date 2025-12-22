@@ -1,4 +1,4 @@
-use logos::{Lexer, Logos};
+use logos::Logos;
 use std::fmt::Display;
 use std::num::ParseIntError;
 use std::str::FromStr;
@@ -117,11 +117,6 @@ pub enum Symbol {
     Eq,
     /// `~`
     Tilde,
-}
-
-#[inline]
-pub fn lexer<'source>(source: &'source <Token as Logos>::Source) -> Lexer<'source, Token> {
-    Token::lexer(source)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
