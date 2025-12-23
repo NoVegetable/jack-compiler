@@ -6,7 +6,7 @@ use jack_compiler::utils::{XmlWrite, init_writer};
 use jack_compiler::{lexer, parser};
 use std::{
     fs,
-    io::{self, Write},
+    io::{self, BufWriter, Write},
 };
 
 fn test_program(program_name: &str) -> io::Result<()> {
@@ -32,7 +32,7 @@ fn test_program(program_name: &str) -> io::Result<()> {
                 .parse(&source, lex)
                 .unwrap_or_else(|e| panic!("error occurs while parsing: {:?}", e));
 
-            let f = io::BufWriter::new(
+            let f = BufWriter::new(
                 fs::OpenOptions::new()
                     .create(true)
                     .truncate(true)

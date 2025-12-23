@@ -1,10 +1,11 @@
 use clap::{Arg, Command};
-use jack_compiler::utils::XmlWrite;
-use jack_compiler::{lexer, parser, utils};
+use jack_compiler::{
+    lexer, parser,
+    utils::{self, XmlWrite},
+};
 use std::ffi::OsStr;
 use std::fs;
-use std::io;
-use std::io::Write;
+use std::io::{self, BufWriter, Write};
 use std::path::Path;
 
 fn main() -> io::Result<()> {
@@ -36,40 +37,33 @@ supports: XML and Rust debug print. The default value is 'xml'."
     let format = matches.get_one::<String>("format").unwrap();
 
     let source = fs::read_to_string(input)?;
-
     let lexer = lexer::Lexer::new(&source);
     let parser = parser::ClassParser::new();
     let ast = parser
         .parse(&source, lexer)
         .unwrap_or_else(|e| panic!("error occurs while parsing: {:?}", e));
 
-    if let Some(out_path) = output {
+    let mut inner_writer: Box<dyn Write> = if let Some(out_path) = output {
         ensure_parent(out_path)?;
+        Box::new(
+            fs::OpenOptions::new()
+                .create(true)
+                .write(true)
+                .truncate(true)
+                .open(out_path)?,
+        )
+    } else {
+        Box::new(io::stdout())
+    };
 
-        let mut out = fs::OpenOptions::new()
-            .create(true)
-            .write(true)
-            .truncate(true)
-            .open(out_path)?;
-
-        if format == "xml" {
-            let mut writer = utils::init_writer(out);
-            if let Err(e) = ast.write_xml(&mut writer) {
-                panic!("error occurs while writing output: {}", e);
-            }
-        } else {
-            out.write(format!("{:#?}", ast).as_bytes())?;
+    if format == "xml" {
+        // writing XML involves a lot of small I/Os, so it would benefit from a write buffer
+        let mut writer = utils::init_writer(BufWriter::new(inner_writer));
+        if let Err(e) = ast.write_xml(&mut writer) {
+            panic!("error occurs while writing output: {}", e);
         }
     } else {
-        let out = io::stdout();
-        if format == "xml" {
-            let mut writer = utils::init_writer(out);
-            if let Err(e) = ast.write_xml(&mut writer) {
-                panic!("error occurs while writing output: {}", e);
-            }
-        } else {
-            print!("{:#?}", ast);
-        }
+        inner_writer.write(format!("{:#?}", ast).as_bytes())?;
     }
 
     Ok(())
