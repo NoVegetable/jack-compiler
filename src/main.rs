@@ -40,7 +40,7 @@ supports: XML and Rust debug print. The default value is 'xml'."
     let lexer = lexer::Lexer::new(&source);
     let parser = parser::ClassParser::new();
     let ast = parser
-        .parse(lexer)
+        .parse(&source, lexer)
         .unwrap_or_else(|e| panic!("error occurs while parsing: {:?}", e));
 
     if let Some(out_path) = output {

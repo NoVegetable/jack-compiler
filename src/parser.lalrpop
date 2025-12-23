@@ -1,13 +1,13 @@
 use crate::token::{Token, LexicalError, Keyword, Symbol};
 use crate::ast;
 
-grammar;
+grammar<'source>(source: &'source str);
 
 extern {
 	type Location = usize;
 	type Error = LexicalError;
 
-	enum Token {
+	enum Token<'source> {
 		"class" => Token::Keyword(Keyword::Class),
 		"static" => Token::Keyword(Keyword::Static),
 		"field" => Token::Keyword(Keyword::Field),
@@ -29,7 +29,7 @@ extern {
 		"false" => Token::Keyword(Keyword::False),
 		"null" => Token::Keyword(Keyword::Null),
 		"this" => Token::Keyword(Keyword::This),
-		"identifier" => Token::Identifier(<String>),
+		"identifier" => Token::Identifier(<&'source str>),
 		"{" => Token::Symbol(Symbol::OpenBrace),
 		"}" => Token::Symbol(Symbol::CloseBrace),
 		"(" => Token::Symbol(Symbol::OpenParen),
@@ -50,11 +50,11 @@ extern {
 		"=" => Token::Symbol(Symbol::Eq),
 		"~" => Token::Symbol(Symbol::Tilde),
 		"IntegerConstant" => Token::IntegerConstant(<u16>),
-		"StringConstant" => Token::StringConstant(<String>),
+		"StringConstant" => Token::StringConstant(<&'source str>),
 	}
 }
 
-pub Class: ast::Class = {
+pub Class: ast::Class<'source> = {
 	"class" <name:ClassName> "{" <variables:ClassVarDec*> <subroutines:SubroutineDec*> "}" => {
 		ast::Class {
 			name,
@@ -64,7 +64,7 @@ pub Class: ast::Class = {
 	},
 }
 
-pub ClassVarDec: ast::ClassVarDec = {
+pub ClassVarDec: ast::ClassVarDec<'source> = {
 	<kind:VarKind> <ty:Ty> <mut names:(<VarName> ",")*> <name:VarName> ";" => {
 		names.push(name);
 		ast::ClassVarDec {
@@ -80,14 +80,14 @@ pub VarKind: ast::VarKind = {
 	"field" => ast::VarKind::Field, 
 }
 
-pub Ty: ast::Ty = {
+pub Ty: ast::Ty<'source> = {
 	"int" => ast::Ty::Int,
 	"char" => ast::Ty::Char,
 	"boolean" => ast::Ty::Boolean,
 	ClassName => ast::Ty::Class(<>),
 }
 
-pub SubroutineDec: ast::SubroutineDec = {
+pub SubroutineDec: ast::SubroutineDec<'source> = {
 	<kind:SubroutineKind> <return_ty:SubroutineReturnTy> <name:SubroutineName> "(" <params:ParameterList> ")" <body:SubroutineBody> => {
 		ast::SubroutineDec {
 			kind,
@@ -105,12 +105,12 @@ pub SubroutineKind: ast::SubroutineKind = {
 	"method" => ast::SubroutineKind::Method,
 }
 
-pub SubroutineReturnTy: ast::SubroutineReturnTy = {
+pub SubroutineReturnTy: ast::SubroutineReturnTy<'source> = {
 	"void" => ast::SubroutineReturnTy::Void,
 	Ty => ast::SubroutineReturnTy::Type(<>),
 }
 
-pub ParameterList: ast::ParameterList = {
+pub ParameterList: ast::ParameterList<'source> = {
 	<mut params:(<Parameter> ",")*> <param:Parameter?> => {
 	    if let Some(param) = param {
 			params.push(param);
@@ -119,7 +119,7 @@ pub ParameterList: ast::ParameterList = {
 	},
 }
 
-pub Parameter: ast::Parameter = {
+pub Parameter: ast::Parameter<'source> = {
 	<ty:Ty> <name:VarName> => {
 		ast::Parameter {
 			ty,
@@ -128,7 +128,7 @@ pub Parameter: ast::Parameter = {
 	},
 }
 
-pub SubroutineBody: ast::SubroutineBody = {
+pub SubroutineBody: ast::SubroutineBody<'source> = {
 	"{" <variables:VarDec*> <stmts:Stmts> "}" => {
 		ast::SubroutineBody {
 			variables,
@@ -137,7 +137,7 @@ pub SubroutineBody: ast::SubroutineBody = {
 	},
 }
 
-pub VarDec: ast::VarDec = {
+pub VarDec: ast::VarDec<'source> = {
 	"var" <ty:Ty> <mut names:(<VarName> ",")*> <name:VarName> ";" => {
 		names.push(name);
 		ast::VarDec {
@@ -147,11 +147,11 @@ pub VarDec: ast::VarDec = {
 	},
 }
 
-pub Stmts: ast::Stmts = {
+pub Stmts: ast::Stmts<'source> = {
 	Stmt* => ast::Stmts(<>),
 }
 
-pub Stmt: ast::Stmt = {
+pub Stmt: ast::Stmt<'source> = {
 	LetStmt => ast::Stmt::Let(<>),
 	IfStmt => ast::Stmt::If(<>),
 	WhileStmt => ast::Stmt::While(<>),
@@ -159,7 +159,7 @@ pub Stmt: ast::Stmt = {
 	ReturnStmt => ast::Stmt::Return(<>),
 }
 
-pub LetStmt: ast::LetStmt = {
+pub LetStmt: ast::LetStmt<'source> = {
 	"let" <var_name:VarName> <idx_expr:("[" <Expression> "]")?> "=" <assign_expr:Expression> ";" => {
 		ast::LetStmt {
 			var_name,
@@ -169,7 +169,7 @@ pub LetStmt: ast::LetStmt = {
 	},
 }
 
-pub IfStmt: ast::IfStmt = {
+pub IfStmt: ast::IfStmt<'source> = {
 	"if" "(" <condition:Expression> ")" "{" <stmts:Stmts> "}" <else_stmts:("else" "{" <Stmts> "}")?> => {
 		ast::IfStmt {
 			condition,
@@ -179,7 +179,7 @@ pub IfStmt: ast::IfStmt = {
 	},
 }
 
-pub WhileStmt: ast::WhileStmt = {
+pub WhileStmt: ast::WhileStmt<'source> = {
 	"while" "(" <condition:Expression> ")" "{" <stmts:Stmts> "}" => {
 		ast::WhileStmt {
 			condition,
@@ -188,7 +188,7 @@ pub WhileStmt: ast::WhileStmt = {
 	},
 }
 
-pub DoStmt: ast::DoStmt = {
+pub DoStmt: ast::DoStmt<'source> = {
 	"do" <call:SubroutineCall> ";" => {
 		ast::DoStmt {
 			call,
@@ -196,7 +196,7 @@ pub DoStmt: ast::DoStmt = {
 	},
 }
 
-pub ReturnStmt: ast::ReturnStmt = {
+pub ReturnStmt: ast::ReturnStmt<'source> = {
 	"return" <return_val:Expression?> ";" => {
 		ast::ReturnStmt {
 			return_val,
@@ -204,7 +204,7 @@ pub ReturnStmt: ast::ReturnStmt = {
 	}
 }
 
-pub Expression: ast::Expression = {
+pub Expression: ast::Expression<'source> = {
 	<leading_term:Term> <following_terms:(<Op> <Term>)*> => {
 		ast::Expression {
 			leading_term: Box::new(leading_term),
@@ -213,7 +213,7 @@ pub Expression: ast::Expression = {
 	},
 }
 
-pub Term: ast::Term = {
+pub Term: ast::Term<'source> = {
 	"IntegerConstant" => ast::Term::IntegerConst(<>),
 	"StringConstant" => ast::Term::StringConst(<>),
 	KeywordConst => ast::Term::KeywordConst(<>),
@@ -224,7 +224,7 @@ pub Term: ast::Term = {
 	<op:UnaryOp> <term:Term> => ast::Term::UnaryOperation(op, Box::new(term)),
 }
 
-pub SubroutineCall: ast::SubroutineCall = {
+pub SubroutineCall: ast::SubroutineCall<'source> = {
 	<prefix:(<"identifier"> ".")?> <name:SubroutineName> "(" <args:ExpressionList> ")" => {
 		ast::SubroutineCall {
 			prefix,
@@ -234,7 +234,7 @@ pub SubroutineCall: ast::SubroutineCall = {
 	},
 }
 
-pub ExpressionList: ast::ExpressionList = {
+pub ExpressionList: ast::ExpressionList<'source> = {
 	<mut exprs:(<Expression> ",")*> <expr:Expression?> => {
 		if let Some(expr) = expr {
 			exprs.push(expr);
@@ -267,14 +267,14 @@ pub KeywordConst: ast::KeywordConst = {
 	"this" => ast::KeywordConst::This,
 }
 
-pub ClassName: ast::ClassName = {
+pub ClassName: ast::ClassName<'source> = {
 	<name: "identifier"> => name,
 }
 
-pub VarName: ast::VarName = {
+pub VarName: ast::VarName<'source> = {
 	<name: "identifier"> => name,
 }
 
-pub SubroutineName: ast::SubroutineName = {
+pub SubroutineName: ast::SubroutineName<'source> = {
 	<name: "identifier"> => name,
 }

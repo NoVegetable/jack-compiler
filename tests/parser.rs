@@ -29,7 +29,7 @@ fn test_program(program_name: &str) -> io::Result<()> {
             let lex = lexer::Lexer::new(&source);
             let parser = parser::ClassParser::new();
             let ast = parser
-                .parse(lex)
+                .parse(&source, lex)
                 .unwrap_or_else(|e| panic!("error occurs while parsing: {:?}", e));
 
             let f = io::BufWriter::new(

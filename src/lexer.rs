@@ -4,7 +4,7 @@ use logos::{Logos, SpannedIter};
 pub type Spanned<Tok, Loc, Error> = Result<(Loc, Tok, Loc), Error>;
 
 pub struct Lexer<'source> {
-    token_stream: SpannedIter<'source, Token>,
+    token_stream: SpannedIter<'source, Token<'source>>,
 }
 
 impl<'source> Lexer<'source> {
@@ -16,7 +16,7 @@ impl<'source> Lexer<'source> {
 }
 
 impl<'source> Iterator for Lexer<'source> {
-    type Item = Spanned<Token, usize, LexicalError>;
+    type Item = Spanned<Token<'source>, usize, LexicalError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.token_stream
