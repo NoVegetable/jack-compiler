@@ -62,6 +62,8 @@ supports: XML and Rust debug print. The default value is 'xml'."
         if let Err(e) = ast.write_xml(&mut writer) {
             panic!("error occurs while writing output: {}", e);
         }
+        // flush the write buffer
+        writer.inner_mut().flush()?;
     } else {
         inner_writer.write(format!("{:#?}", ast).as_bytes())?;
     }
