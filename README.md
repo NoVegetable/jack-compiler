@@ -6,7 +6,7 @@ This is a Jack compiler frontend implementation, which takes Jack source code as
 
 The whole project is written in Rust, so Rust toolchain is required to build and run it.
 
-Rust toolchain can installed [here](https://rust-lang.org/tools/install/).
+Rust toolchain can be installed [here](https://rust-lang.org/tools/install/).
 
 ## Usage
 
