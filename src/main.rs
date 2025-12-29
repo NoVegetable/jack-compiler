@@ -63,12 +63,12 @@ supports: XML and Rust debug print. The default value is 'xml'."
             panic!("error occurs while writing output: {}", e);
         }
         // flush the write buffer
-        writer.inner_mut().flush()?;
+        writer.inner_mut().flush()
     } else {
-        inner_writer.write(format!("{:#?}", ast).as_bytes())?;
+        inner_writer
+            .write(format!("{:#?}", ast).as_bytes())
+            .map(|_| ())
     }
-
-    Ok(())
 }
 
 fn ensure_parent<S: AsRef<OsStr> + ?Sized>(s: &S) -> io::Result<()> {
@@ -76,6 +76,5 @@ fn ensure_parent<S: AsRef<OsStr> + ?Sized>(s: &S) -> io::Result<()> {
     let Some(parent) = path.parent() else {
         panic!("invalid output path");
     };
-    fs::create_dir_all(parent)?;
-    Ok(())
+    fs::create_dir_all(parent)
 }

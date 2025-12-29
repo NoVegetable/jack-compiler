@@ -14,19 +14,15 @@ pub fn init_writer<W: Write>(writer: W) -> EventWriter<W> {
         .create_writer(writer)
 }
 
-fn write_start<'a, W: Write>(writer: &mut EventWriter<W>, element: &'a str) -> WriteResult {
+fn write_start<W: Write>(writer: &mut EventWriter<W>, element: &str) -> WriteResult {
     writer.write(XmlEvent::start_element(element))
 }
 
-fn write_end<'a, W: Write>(writer: &mut EventWriter<W>) -> WriteResult {
+fn write_end<W: Write>(writer: &mut EventWriter<W>) -> WriteResult {
     writer.write(XmlEvent::end_element())
 }
 
-fn write_element<'a, W: Write>(
-    writer: &mut EventWriter<W>,
-    element: &'a str,
-    chars: &'a str,
-) -> WriteResult {
+fn write_element<W: Write>(writer: &mut EventWriter<W>, element: &str, chars: &str) -> WriteResult {
     writer.write(XmlEvent::start_element(element))?;
     writer.write(XmlEvent::characters(chars))?;
     writer.write(XmlEvent::end_element())
@@ -36,7 +32,7 @@ pub trait XmlWrite {
     fn write_xml<W: Write>(&self, writer: &mut EventWriter<W>) -> WriteResult;
 }
 
-impl<'a> XmlWrite for &'a str {
+impl XmlWrite for &str {
     fn write_xml<W: Write>(&self, writer: &mut EventWriter<W>) -> WriteResult {
         let chars = format!(" {} ", *self);
         write_element(writer, "identifier", &chars)
@@ -75,7 +71,7 @@ impl<'source> XmlWrite for ast::ClassVarDec<'source> {
     }
 }
 
-impl<'source> XmlWrite for ast::VarKind {
+impl XmlWrite for ast::VarKind {
     fn write_xml<W: Write>(&self, writer: &mut EventWriter<W>) -> WriteResult {
         use ast::VarKind::*;
         match self {
@@ -295,7 +291,7 @@ impl<'source> XmlWrite for ast::Term<'source> {
         write_start(writer, "term")?;
         match self {
             IntegerConst(n) => {
-                write_element(writer, "integerConstant", &format!(" {} ", n.to_string()))?;
+                write_element(writer, "integerConstant", &format!(" {} ", n))?;
             }
             StringConst(s) => write_element(
                 writer,
@@ -352,7 +348,7 @@ impl<'source> XmlWrite for ast::ExpressionList<'source> {
     }
 }
 
-impl<'source> XmlWrite for ast::Op {
+impl XmlWrite for ast::Op {
     fn write_xml<W: Write>(&self, writer: &mut EventWriter<W>) -> WriteResult {
         use ast::Op::*;
         let chars = match *self {
@@ -370,7 +366,7 @@ impl<'source> XmlWrite for ast::Op {
     }
 }
 
-impl<'source> XmlWrite for ast::UnaryOp {
+impl XmlWrite for ast::UnaryOp {
     fn write_xml<W: Write>(&self, writer: &mut EventWriter<W>) -> WriteResult {
         use ast::UnaryOp::*;
         let chars = match *self {
@@ -381,7 +377,7 @@ impl<'source> XmlWrite for ast::UnaryOp {
     }
 }
 
-impl<'source> XmlWrite for ast::KeywordConst {
+impl XmlWrite for ast::KeywordConst {
     fn write_xml<W: Write>(&self, writer: &mut EventWriter<W>) -> WriteResult {
         use ast::KeywordConst::*;
         let chars = match *self {
